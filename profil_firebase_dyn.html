@@ -1,0 +1,63 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Carte NFC - Profil Praticien</title>
+</head>
+<body>
+  <div class="card">
+    <img class="profile-pic" src="" alt="Dentiste" />
+    <h2>Chargement...</h2>
+    <p class="speciality">Chargement...</p>
+    <div class="info"><strong>Adresse</strong><br/>...</div>
+    <div class="info"><strong>Horaires</strong><br/>...</div>
+    <button onclick="trackFirebaseClick('clics_rdv')">Prendre RDV</button>
+  </div>
+  
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD1rxrOqujyTehBCmTXf3ey9ZV_2AlO5jQ",
+    authDomain: "dentiste-6f7e0.firebaseapp.com",
+    projectId: "dentiste-6f7e0",
+    storageBucket: "dentiste-6f7e0.firebasestorage.app",
+    messagingSenderId: "1049364021560",
+    appId: "1:1049364021560:web:8bc62eceeee8b800fdc1cd",
+    measurementId: "G-GVZKX3XCPP"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Charger les infos du praticien depuis Firestore
+  const profilRef = doc(db, "users", "8cGJL5gjK7aBneFkOvud3pQ7zqp2"); // à remplacer par le vrai UID
+  const profilSnap = await getDoc(profilRef);
+
+  if (profilSnap.exists()) {
+    const data = profilSnap.data();
+    document.querySelector("h2").textContent = data.nom || "Nom non défini";
+    document.querySelector(".speciality")?.textContent = data.specialite || "Spécialité";
+    document.querySelector(".profile-pic").src = data.photo || "https://via.placeholder.com/120";
+    document.querySelector(".info:nth-of-type(1)").innerHTML = "<strong>Adresse</strong><br>" + (data.adresse || "");
+    document.querySelector(".info:nth-of-type(2)").innerHTML = "<strong>Horaires</strong><br>" + (data.horaires || "");
+  }
+
+  // Statistiques de clics (si carte vue, RDV, etc.)
+  const docRef = doc(db, "stats", "carte-yris");
+  updateDoc(docRef, { vues: increment(1) }).catch(async () => {
+    await setDoc(docRef, { vues: 1, clics_rdv: 0, clics_share: 0, clics_save: 0 });
+  });
+
+  window.trackFirebaseClick = function(action) {
+    const updates = {};
+    updates[action] = increment(1);
+    updateDoc(docRef, updates);
+  };
+</script>
+
+</body>
+</html>
